@@ -181,6 +181,15 @@ Self-service entry point to the [IdPlatformKit Orchestrator](https://github.com/
 
 The pull request is opened **with the developer's own GitHub identity**, not a shared portal token: the `RepoUrlPicker` requests the user's GitHub OAuth token with the extra `public_repo` scope (`requestUserCredentials`), and `publish:github:pull-request` uses it. GitHub then shows who asked for the tenant.
 
+**The GitHub org must approve the portal's OAuth App.** GitHub orgs restrict OAuth App access by default, so the first run failed on the first write, before anything was created:
+
+```
+Pull request creation failed; caused by HttpError: Although you appear to have the correct authorization
+credentials, the `idPlatformKit` organization has enabled OAuth App access restrictions ...
+```
+
+An org owner has to grant access once: open `https://github.com/settings/connections/applications/<client id>` and click **Grant** next to the org under *Organization access*. The user's token stays valid, so no new sign-in is needed. Granting access to this one app is preferable to lifting the org's restrictions.
+
 Verified with a scaffolder dry run (`POST /api/scaffolder/v2/dry-run`): both variants (with and without OpenBao) produce a claim that passes `crossplane resource validate` against the Orchestrator XRDs.
 
 The template is registered in `catalog.locations` in `app-config.yaml`. If your `app-config.local.yaml` also defines `catalog.locations`, it **replaces** the list instead of extending it (arrays aren't merged across config files), and the template won't show up.
