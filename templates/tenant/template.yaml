@@ -1,0 +1,120 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-tenant
+  title: New Tenant
+  description: >-
+    Request an isolated namespace for your team (quota, limits, RBAC,
+    default-deny network policy), optionally with its own OpenBao secrets
+    namespace. Opens a pull request adding a Tenant claim to the
+    idPlatformKit/instances repository.
+  tags:
+    - crossplane
+    - gitops
+    - tenant
+spec:
+  owner: user:default/antoyavin
+  type: platform
+
+  parameters:
+    - title: Tenant
+      required:
+        - name
+        - ownerGroup
+      properties:
+        name:
+          title: Name
+          type: string
+          description: >-
+            Becomes the namespace name: lowercase letters, digits and
+            dashes, starting and ending with a letter or digit.
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+          maxLength: 63
+          ui:autofocus: true
+        ownerGroup:
+          title: Owner group
+          type: string
+          description: GitHub team granted `edit` on the tenant's namespace.
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              - kind: Group
+                metadata.annotations.github.com/team-slug:
+                  exists: true
+        vaultEnabled:
+          title: OpenBao secrets namespace
+          type: boolean
+          description: Give the tenant its own isolated OpenBao namespace and KV mount.
+          default: false
+      dependencies:
+        vaultEnabled:
+          oneOf:
+            - properties:
+                vaultEnabled:
+                  const: false
+            - required:
+                - serviceAccountName
+              properties:
+                vaultEnabled:
+                  const: true
+                serviceAccountName:
+                  title: ServiceAccount
+                  type: string
+                  description: >-
+                    The only ServiceAccount (in the tenant's namespace) allowed
+                    to read the tenant's secrets. Not created for you.
+                  pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+
+    - title: Pull request
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Instances repository
+          type: string
+          description: >-
+            The pull request is opened with your own GitHub identity, so you
+            will be asked to grant the portal access to public repositories.
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - idPlatformKit
+            allowedRepos:
+              - instances
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - public_repo
+
+  steps:
+    - id: claim
+      name: Generate the Tenant claim
+      action: fetch:template
+      input:
+        url: ./content
+        values:
+          name: ${{ parameters.name }}
+          ownerGroup: ${{ parameters.ownerGroup | parseEntityRef | pick('name') }}
+          vaultEnabled: ${{ parameters.vaultEnabled }}
+          serviceAccountName: ${{ parameters.serviceAccountName }}
+
+    - id: pr
+      name: Open the pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName: tenant/${{ parameters.name }}
+        title: 'feat: add tenant ${{ parameters.name }}'
+        description: |
+          Adds the `${{ parameters.name }}` Tenant, owned by `${{ parameters.ownerGroup | parseEntityRef | pick('name') }}`.
+
+          Opened from the IdPlatformKit portal ("New Tenant" template). CI validates the claim against the Orchestrator XRDs; once merged, Argo CD syncs it and Crossplane provisions the namespace.
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+
+  output:
+    links:
+      - title: Pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

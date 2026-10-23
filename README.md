@@ -167,6 +167,26 @@ A user declared both in `examples/org.yaml` and in the GitHub org is reported as
 
 ---
 
+### Software Templates
+
+#### New Tenant (`templates/tenant/`)
+
+Self-service entry point to the [IdPlatformKit Orchestrator](https://github.com/idPlatformKit/Orchestrator): a developer fills in a form, and the template opens a pull request adding a `Tenant` claim to [idPlatformKit/instances](https://github.com/idPlatformKit/instances). From there the platform's GitOps flow takes over: CI validates the claim against the XRDs, and once merged, Argo CD syncs it and Crossplane provisions the namespace.
+
+| Field | Becomes |
+|---|---|
+| Name | `metadata.name`, which is also the namespace name |
+| Owner group | `spec.ownerGroup`. Picked among the `Group` entities imported from GitHub teams (filtered on the `github.com/team-slug` annotation) |
+| OpenBao secrets namespace + ServiceAccount | `spec.vault`, only when enabled |
+
+The pull request is opened **with the developer's own GitHub identity**, not a shared portal token: the `RepoUrlPicker` requests the user's GitHub OAuth token with the extra `public_repo` scope (`requestUserCredentials`), and `publish:github:pull-request` uses it. GitHub then shows who asked for the tenant.
+
+Verified with a scaffolder dry run (`POST /api/scaffolder/v2/dry-run`): both variants (with and without OpenBao) produce a claim that passes `crossplane resource validate` against the Orchestrator XRDs.
+
+The template is registered in `catalog.locations` in `app-config.yaml`. If your `app-config.local.yaml` also defines `catalog.locations`, it **replaces** the list instead of extending it (arrays aren't merged across config files), and the template won't show up.
+
+---
+
 ### TechDocs
 
 TechDocs are built locally using Docker:
