@@ -91,7 +91,10 @@ catalog:
       githubUrl: https://github.com
       orgs: ['idPlatformKit']
       schedule:
-        initialDelay: { seconds: 30 }
+        # The dev catalog is in-memory and starts empty: until this first
+        # import runs, GitHub sign-in fails with "unable to resolve user
+        # identity". The import itself takes under a second.
+        initialDelay: { seconds: 5 }
         frequency: { hours: 1 }
         timeout: { minutes: 50 }
   import:

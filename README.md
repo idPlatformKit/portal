@@ -152,12 +152,14 @@ catalog:
       githubUrl: https://github.com
       orgs: ['idPlatformKit']
       schedule:
-        initialDelay: { seconds: 30 }
+        initialDelay: { seconds: 5 }
         frequency: { hours: 1 }
         timeout: { minutes: 50 }
 ```
 
 It authenticates with the `integrations.github` token (`GITHUB_TOKEN`), which needs the `read:org`, `read:user` and `user:email` scopes. With an expired or revoked token the import fails in the backend logs with `refresh failed, HttpError: Bad credentials`, and the catalog has no GitHub users.
+
+**Signing in right after startup fails.** The development catalog is in-memory (`better-sqlite3`, `:memory:`), so it starts empty on every restart and GitHub users only exist once the first import has run. Signing in before that fails with *"Failed to sign-in, unable to resolve user identity"*. This happened with the initial 30-second `initialDelay`. It is now 5 seconds, and the import itself takes under a second. If it still happens, wait for `Committed 1 GitHub users` in the backend logs and retry.
 
 A user declared both in `examples/org.yaml` and in the GitHub org is reported as a conflict (`detected conflicting entityRef user:default/<name>`): the GitHub import is the source of truth, so don't duplicate users in the example file.
 
