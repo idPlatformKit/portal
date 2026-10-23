@@ -140,6 +140,29 @@ catalog:
 
 ---
 
+### GitHub org import
+
+Members and teams of the [idPlatformKit](https://github.com/idPlatformKit) GitHub org are imported into the catalog as `User` and `Group` entities by `@backstage/plugin-catalog-backend-module-github-org`. Imported users are what the GitHub sign-in resolver (`usernameMatchingUserEntityName`) matches against, so nobody has to be declared by hand in `examples/org.yaml`.
+
+```yaml
+catalog:
+  providers:
+    githubOrg:
+      id: development
+      githubUrl: https://github.com
+      orgs: ['idPlatformKit']
+      schedule:
+        initialDelay: { seconds: 30 }
+        frequency: { hours: 1 }
+        timeout: { minutes: 50 }
+```
+
+It authenticates with the `integrations.github` token (`GITHUB_TOKEN`), which needs the `read:org`, `read:user` and `user:email` scopes. With an expired or revoked token the import fails in the backend logs with `refresh failed, HttpError: Bad credentials`, and the catalog has no GitHub users.
+
+A user declared both in `examples/org.yaml` and in the GitHub org is reported as a conflict (`detected conflicting entityRef user:default/<name>`): the GitHub import is the source of truth, so don't duplicate users in the example file.
+
+---
+
 ### TechDocs
 
 TechDocs are built locally using Docker:
