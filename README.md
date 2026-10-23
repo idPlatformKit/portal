@@ -190,7 +190,13 @@ credentials, the `idPlatformKit` organization has enabled OAuth App access restr
 
 An org owner has to grant access once: open `https://github.com/settings/connections/applications/<client id>` and click **Grant** next to the org under *Organization access*. The user's token stays valid, so no new sign-in is needed. Granting access to this one app is preferable to lifting the org's restrictions.
 
-Verified with a scaffolder dry run (`POST /api/scaffolder/v2/dry-run`): both variants (with and without OpenBao) produce a claim that passes `crossplane resource validate` against the Orchestrator XRDs.
+Verified end to end on the local kind cluster ([Orchestrator](https://github.com/idPlatformKit/Orchestrator) `make local-up-gitops`):
+
+1. The template, run in the browser, opened [idPlatformKit/instances#1](https://github.com/idPlatformKit/instances/pull/1). It was authored by the signed-in user and adds `tenants/payments.yaml` (owner `checkout-engineers`, OpenBao enabled).
+2. The instances CI validated the claim against the XRDs in 11 seconds.
+3. After the merge, Argo CD applied the claim, and about 3 minutes later the `payments` Tenant was `Ready`: namespace, quota, limits, a default-deny NetworkPolicy, a `RoleBinding` granting `Group/checkout-engineers` the `edit` ClusterRole, and the OpenBao namespace, mount, policy and Kubernetes auth role.
+
+Before that, a scaffolder dry run (`POST /api/scaffolder/v2/dry-run`) checked both variants (with and without OpenBao). Both produce a claim that passes `crossplane resource validate`.
 
 The template is registered in `catalog.locations` in `app-config.yaml`. If your `app-config.local.yaml` also defines `catalog.locations`, it **replaces** the list instead of extending it (arrays aren't merged across config files), and the template won't show up.
 
