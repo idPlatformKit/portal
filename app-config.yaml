@@ -81,6 +81,22 @@ scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
 catalog:
+  providers:
+    # Imports the GitHub org's members as User entities and its teams as
+    # Group entities, so GitHub sign-in (usernameMatchingUserEntityName)
+    # finds a matching User. Uses the integrations.github token, which needs
+    # read:org, read:user and user:email.
+    githubOrg:
+      id: development
+      githubUrl: https://github.com
+      orgs: ['idPlatformKit']
+      schedule:
+        # The dev catalog is in-memory and starts empty: until this first
+        # import runs, GitHub sign-in fails with "unable to resolve user
+        # identity". The import itself takes under a second.
+        initialDelay: { seconds: 5 }
+        frequency: { hours: 1 }
+        timeout: { minutes: 50 }
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
