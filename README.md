@@ -15,6 +15,8 @@ yarn start
 
 The frontend runs on `http://localhost:3000` and the backend on `http://localhost:7007`.
 
+Without options, `yarn start` loads `app-config.yaml` and then `app-config.local.yaml` on top of it. Keep secrets and personal overrides in `app-config.local.yaml` (git-ignored). Don't start with `--config app-config.local.yaml` alone: passing `--config` replaces the default files, so `app-config.yaml` is silently skipped. That's how removing a block from the local file once disabled the GitHub org import, because the committed copy in `app-config.yaml` was never loaded.
+
 ---
 
 ## Configuration (`app-config.yaml`)
