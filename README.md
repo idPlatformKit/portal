@@ -202,6 +202,31 @@ The template is registered in `catalog.locations` in `app-config.yaml`. If your 
 
 ---
 
+### Kubernetes: each tenant's resources
+
+Every tenant has a `Resource` entity of type `tenant` (for example `tenant-payments`), owned by its GitHub team. Its **Kubernetes** tab lists everything Crossplane composed for it:
+- the `Tenant` itself;
+- its `ResourceQuota`, `LimitRange`, `NetworkPolicy` and `RoleBinding`;
+- the OpenBao resources: `VaultNamespace`, `Mount`, `Policy`, auth `Backend`, `AuthBackendConfig` and `AuthBackendRole`.
+
+How the pieces fit:
+
+- **Entities**: they live in [idPlatformKit/instances](https://github.com/idPlatformKit/instances) under `catalog/<tenant>.yaml`, next to the claim in `tenants/<tenant>.yaml`. The New Tenant template opens both files in the same pull request. The `github` catalog provider (`@backstage/plugin-catalog-backend-module-github`) discovers `catalog/*.yaml` on `main` every 5 minutes.
+- **Selection**: each entity carries `backstage.io/kubernetes-label-selector: crossplane.io/composite=<tenant>`, a label Crossplane puts on the Tenant and on everything it composes. There's no namespace annotation: the `Tenant` is cluster-scoped, so a namespaced lookup would miss it.
+- **Custom resources**: NetworkPolicies, RoleBindings, the platform's XRs and the Vault managed resources aren't in the plugin's default object types, so they're listed in `kubernetes.customResources`.
+- **Cluster access**: the local kind cluster from [Orchestrator](https://github.com/idPlatformKit/Orchestrator) is read through its read-only `backstage-reader` ServiceAccount, which has no access to Secrets. Export its URL and token before `yarn start`:
+
+  ```sh
+  eval "$(make -C ../Orchestrator -s backstage-token)"   # sets K8S_CLUSTER_URL and K8S_CLUSTER_TOKEN
+  yarn start
+  ```
+
+  `skipTLSVerify: true` is there because kind's API server uses a self-signed certificate. That's local only.
+
+Verified against the kind cluster, first through the backend API (`POST /api/kubernetes/services/tenant-payments` returned the 11 objects listed above, with no errors), then in the browser, where the Kubernetes tab of `tenant-payments` shows all of them. A scaffolder dry run of the template produces the entity file next to the claim.
+
+---
+
 ### TechDocs
 
 TechDocs are built locally using Docker:
