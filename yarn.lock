@@ -15737,6 +15737,7 @@ __metadata:
     "@backstage/plugin-auth-backend-module-guest-provider": "npm:^0.2.17"
     "@backstage/plugin-auth-node": "npm:^0.6.14"
     "@backstage/plugin-catalog-backend": "npm:^3.5.0"
+    "@backstage/plugin-catalog-backend-module-github": "npm:^0.13.1"
     "@backstage/plugin-catalog-backend-module-github-org": "npm:^0.3.21"
     "@backstage/plugin-catalog-backend-module-logs": "npm:^0.1.20"
     "@backstage/plugin-catalog-backend-module-scaffolder-entity-model": "npm:^0.2.18"

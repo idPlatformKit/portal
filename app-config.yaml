@@ -97,6 +97,19 @@ catalog:
         initialDelay: { seconds: 5 }
         frequency: { hours: 1 }
         timeout: { minutes: 50 }
+    # One Resource entity per tenant, added to idPlatformKit/instances by the
+    # New Tenant template next to the claim (catalog/<tenant>.yaml).
+    github:
+      instances:
+        organization: idPlatformKit
+        catalogPath: '/catalog/*.yaml'
+        filters:
+          repository: '^instances$'
+          branch: main
+        schedule:
+          initialDelay: { seconds: 5 }
+          frequency: { minutes: 5 }
+          timeout: { minutes: 3 }
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
@@ -136,7 +149,57 @@ catalog:
     #     - allow: [User, Group]
 
 kubernetes:
-  # see https://backstage.io/docs/features/kubernetes/configuration for kubernetes configuration options
+  # Each entity with a backstage.io/kubernetes-label-selector annotation (the
+  # tenant entities) gets a Kubernetes tab listing the matching objects.
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        # The local kind cluster from idPlatformKit/Orchestrator, read with
+        # its read-only backstage-reader ServiceAccount. Get both values with
+        # `eval "$(make -s backstage-token)"` in the Orchestrator repo.
+        - name: idplatformkit-local
+          url: ${K8S_CLUSTER_URL}
+          authProvider: serviceAccount
+          serviceAccountToken: ${K8S_CLUSTER_TOKEN}
+          # kind's API server uses a self-signed certificate. Local only.
+          skipTLSVerify: true
+          skipMetricsLookup: true
+  # The Tenant itself and what it composes beyond the object types the
+  # plugin fetches by default (which already include LimitRange and
+  # ResourceQuota).
+  customResources:
+    - group: networking.k8s.io
+      apiVersion: v1
+      plural: networkpolicies
+    - group: rbac.authorization.k8s.io
+      apiVersion: v1
+      plural: rolebindings
+    - group: platform.idplatformkit.io
+      apiVersion: v1alpha1
+      plural: tenants
+    - group: database.idplatformkit.io
+      apiVersion: v1alpha1
+      plural: postgresdatabases
+    - group: vault.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: vaultnamespaces
+    - group: vault.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: mounts
+    - group: vault.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: policies
+    - group: auth.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: backends
+    - group: kubernetes.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: authbackendconfigs
+    - group: kubernetes.vault.m.upbound.io
+      apiVersion: v1alpha1
+      plural: authbackendroles
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
 permission:
