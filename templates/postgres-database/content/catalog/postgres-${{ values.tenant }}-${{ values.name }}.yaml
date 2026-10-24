@@ -1,0 +1,20 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: postgres-${{ values.tenant }}-${{ values.name }}
+  title: ${{ values.name }} (${{ values.tenant }})
+  description: Postgres database ${{ values.tenant }}_${{ values.name }} on the shared server, provisioned by Crossplane
+  annotations:
+    # crossplane.io/composite=<name> is only unique within a namespace, so
+    # the tenant label narrows it down. Not backstage.io/kubernetes-namespace:
+    # a namespaced lookup also queries cluster-scoped kinds such as Tenant
+    # and reports NOT_FOUND errors in the Kubernetes tab.
+    backstage.io/kubernetes-label-selector: crossplane.io/composite=${{ values.name }},idplatformkit.io/tenant=${{ values.tenant }}
+  links:
+    - url: https://github.com/idPlatformKit/instances/blob/main/databases/${{ values.tenant }}/${{ values.name }}.yaml
+      title: PostgresDatabase claim
+spec:
+  type: database
+  owner: ${{ values.owner }}
+  dependencyOf:
+    - ${{ values.tenantRef }}

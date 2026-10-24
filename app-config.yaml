@@ -131,6 +131,10 @@ catalog:
       target: ../../templates/tenant/template.yaml
       rules:
         - allow: [Template]
+    - type: file
+      target: ../../templates/postgres-database/template.yaml
+      rules:
+        - allow: [Template]
 
     # Local example organizational data
     - type: file
@@ -200,6 +204,12 @@ kubernetes:
     - group: kubernetes.vault.m.upbound.io
       apiVersion: v1alpha1
       plural: authbackendroles
+    - group: postgresql.sql.m.crossplane.io
+      apiVersion: v1alpha1
+      plural: roles
+    - group: postgresql.sql.m.crossplane.io
+      apiVersion: v1alpha1
+      plural: databases
 
 # see https://backstage.io/docs/permissions/getting-started for more on the permission framework
 permission:
