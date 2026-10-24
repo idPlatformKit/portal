@@ -223,7 +223,7 @@ How the pieces fit:
 
   `skipTLSVerify: true` is there because kind's API server uses a self-signed certificate. That's local only.
 
-Verified against the kind cluster through the backend API (`POST /api/kubernetes/services/tenant-payments`): it returned the 11 objects listed above with no errors. A scaffolder dry run of the template produces the entity file next to the claim.
+Verified against the kind cluster, first through the backend API (`POST /api/kubernetes/services/tenant-payments` returned the 11 objects listed above, with no errors), then in the browser, where the Kubernetes tab of `tenant-payments` shows all of them. A scaffolder dry run of the template produces the entity file next to the claim.
 
 ---
 
