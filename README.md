@@ -167,6 +167,41 @@ A user declared both in `examples/org.yaml` and in the GitHub org is reported as
 
 ---
 
+### Software Templates
+
+#### New Tenant (`templates/tenant/`)
+
+Self-service entry point to the [IdPlatformKit Orchestrator](https://github.com/idPlatformKit/Orchestrator): a developer fills in a form, and the template opens a pull request adding a `Tenant` claim to [idPlatformKit/instances](https://github.com/idPlatformKit/instances). From there the platform's GitOps flow takes over: CI validates the claim against the XRDs, and once merged, Argo CD syncs it and Crossplane provisions the namespace.
+
+| Field | Becomes |
+|---|---|
+| Name | `metadata.name`, which is also the namespace name |
+| Owner group | `spec.ownerGroup`. Picked among the `Group` entities imported from GitHub teams (filtered on the `github.com/team-slug` annotation) |
+| OpenBao secrets namespace + ServiceAccount | `spec.vault`, only when enabled |
+
+The pull request is opened **with the developer's own GitHub identity**, not a shared portal token: the `RepoUrlPicker` requests the user's GitHub OAuth token with the extra `public_repo` scope (`requestUserCredentials`), and `publish:github:pull-request` uses it. GitHub then shows who asked for the tenant.
+
+**The GitHub org must approve the portal's OAuth App.** GitHub orgs restrict OAuth App access by default, so the first run failed on the first write, before anything was created:
+
+```
+Pull request creation failed; caused by HttpError: Although you appear to have the correct authorization
+credentials, the `idPlatformKit` organization has enabled OAuth App access restrictions ...
+```
+
+An org owner has to grant access once: open `https://github.com/settings/connections/applications/<client id>` and click **Grant** next to the org under *Organization access*. The user's token stays valid, so no new sign-in is needed. Granting access to this one app is preferable to lifting the org's restrictions.
+
+Verified end to end on the local kind cluster ([Orchestrator](https://github.com/idPlatformKit/Orchestrator) `make local-up-gitops`):
+
+1. The template, run in the browser, opened [idPlatformKit/instances#1](https://github.com/idPlatformKit/instances/pull/1). It was authored by the signed-in user and adds `tenants/payments.yaml` (owner `checkout-engineers`, OpenBao enabled).
+2. The instances CI validated the claim against the XRDs in 11 seconds.
+3. After the merge, Argo CD applied the claim, and about 3 minutes later the `payments` Tenant was `Ready`: namespace, quota, limits, a default-deny NetworkPolicy, a `RoleBinding` granting `Group/checkout-engineers` the `edit` ClusterRole, and the OpenBao namespace, mount, policy and Kubernetes auth role.
+
+Before that, a scaffolder dry run (`POST /api/scaffolder/v2/dry-run`) checked both variants (with and without OpenBao). Both produce a claim that passes `crossplane resource validate`.
+
+The template is registered in `catalog.locations` in `app-config.yaml`. If your `app-config.local.yaml` also defines `catalog.locations`, it **replaces** the list instead of extending it (arrays aren't merged across config files), and the template won't show up.
+
+---
+
 ### TechDocs
 
 TechDocs are built locally using Docker:

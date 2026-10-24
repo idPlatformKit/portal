@@ -1,0 +1,11 @@
+apiVersion: platform.idplatformkit.io/v1alpha1
+kind: Tenant
+metadata:
+  name: ${{ values.name }}
+spec:
+  ownerGroup: ${{ values.ownerGroup }}
+{%- if values.vaultEnabled %}
+  vault:
+    enabled: true
+    serviceAccountName: ${{ values.serviceAccountName }}
+{%- endif %}

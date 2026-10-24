@@ -113,6 +113,12 @@ catalog:
       rules:
         - allow: [Template]
 
+    # IdPlatformKit Software Templates
+    - type: file
+      target: ../../templates/tenant/template.yaml
+      rules:
+        - allow: [Template]
+
     # Local example organizational data
     - type: file
       target: ../../examples/org.yaml
