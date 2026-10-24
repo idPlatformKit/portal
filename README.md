@@ -215,7 +215,13 @@ The model for adding a service to an existing tenant:
 
 Several databases per tenant are possible. On the shared Postgres server, each one is `<tenant>_<name>`.
 
-Verified with a scaffolder dry run on `tenant-payments`: it generates both files, and the claim passes `crossplane resource validate`. The entity's label selector was checked against kind through the backend's Kubernetes API, on the equivalent `checkout-db` entity.
+Verified end to end on kind:
+
+1. Run from the browser on `tenant-payments`, the template opened [idPlatformKit/instances#4](https://github.com/idPlatformKit/instances/pull/4), authored by the signed-in user, adding `databases/payments/orders.yaml` and `catalog/postgres-payments-orders.yaml`. The instances CI validated it.
+2. After the merge, Argo CD applied the claim, and Crossplane created the `payments_orders` role and database. A login with the `orders-conn` Secret's credentials could create and write a table.
+3. In the catalog, `postgres-payments-orders` is owned by `checkout-engineers` and linked both ways: `dependencyOf → tenant-payments` on the database, `dependsOn → postgres-payments-orders` on the tenant. Its Kubernetes tab lists the `PostgresDatabase`, `Role` and `Database`, with no errors.
+
+Before that, a scaffolder dry run checked the generated files, and the claim passes `crossplane resource validate`.
 
 ---
 
