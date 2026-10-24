@@ -62,7 +62,10 @@ spec:
                   type: string
                   description: >-
                     The only ServiceAccount (in the tenant's namespace) allowed
-                    to read the tenant's secrets. Not created for you.
+                    to read the tenant's secrets. Created with the tenant; run
+                    the workloads that need the secrets as it. The tenant's
+                    "openbao" SecretStore uses it to deliver them as
+                    Kubernetes Secrets.
                   pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
 
     - title: Pull request
