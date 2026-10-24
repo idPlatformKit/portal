@@ -1,0 +1,104 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-postgres-database
+  title: New Postgres database
+  description: >-
+    Add a logical Postgres database to one of your tenants. Opens a pull
+    request on the idPlatformKit/instances repository with a PostgresDatabase
+    claim in the tenant's namespace, plus a catalog entity linked to the
+    tenant.
+  tags:
+    - crossplane
+    - gitops
+    - postgres
+spec:
+  owner: user:default/antoyavin
+  type: platform
+
+  parameters:
+    - title: Database
+      required:
+        - tenant
+        - name
+      properties:
+        tenant:
+          title: Tenant
+          type: string
+          description: One of the tenants owned by your teams.
+          ui:field: OwnedEntityPicker
+          ui:options:
+            catalogFilter:
+              - kind: Resource
+                spec.type: tenant
+        name:
+          title: Name
+          type: string
+          description: >-
+            Lowercase letters, digits and dashes. On the shared Postgres
+            server the database and its role are named <tenant>_<name>, which
+            must stay under 63 characters.
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
+          maxLength: 30
+          ui:autofocus: true
+
+    - title: Pull request
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Instances repository
+          type: string
+          description: >-
+            The pull request is opened with your own GitHub identity.
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - idPlatformKit
+            allowedRepos:
+              - instances
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - public_repo
+
+  steps:
+    # The tenant entity carries the namespace name (metadata.title) and the
+    # owning team, both reused for the new database.
+    - id: tenant
+      name: Look up the tenant
+      action: catalog:fetch
+      input:
+        entityRef: ${{ parameters.tenant }}
+
+    - id: claim
+      name: Generate the PostgresDatabase claim
+      action: fetch:template
+      input:
+        url: ./content
+        values:
+          name: ${{ parameters.name }}
+          tenant: ${{ steps.tenant.output.entity.metadata.title }}
+          tenantRef: ${{ parameters.tenant }}
+          owner: ${{ steps.tenant.output.entity.spec.owner }}
+
+    - id: pr
+      name: Open the pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        branchName: postgres/${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.name }}
+        title: 'feat: add Postgres database ${{ parameters.name }} to tenant ${{ steps.tenant.output.entity.metadata.title }}'
+        description: |
+          Adds the `${{ parameters.name }}` Postgres database to the `${{ steps.tenant.output.entity.metadata.title }}` tenant. Its connection details will be in the `${{ parameters.name }}-conn` Secret of the tenant's namespace.
+
+          Opened from the IdPlatformKit portal ("New Postgres database" template). CI validates the claim against the Orchestrator XRDs. Once merged, Argo CD syncs it and Crossplane provisions the database.
+        token: ${{ secrets.USER_OAUTH_TOKEN }}
+
+  output:
+    links:
+      - title: Pull request
+        url: ${{ steps['pr'].output.remoteUrl }}

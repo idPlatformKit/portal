@@ -202,12 +202,31 @@ The template is registered in `catalog.locations` in `app-config.yaml`. If your 
 
 ---
 
+#### New Postgres database (`templates/postgres-database/`)
+
+The model for adding a service to an existing tenant:
+
+1. **Pick the tenant.** `OwnedEntityPicker` limits the list to `Resource` entities of type `tenant` owned by your teams.
+2. **Describe the service.** Here, a database name.
+3. **Look it up.** `catalog:fetch` reads the tenant entity, to reuse its namespace (`metadata.title`) and its owner.
+4. **Open the pull request.** It goes to [idPlatformKit/instances](https://github.com/idPlatformKit/instances) with your own GitHub identity, and adds two files:
+   - `databases/<tenant>/<name>.yaml`, a `PostgresDatabase` claim in the tenant's namespace. The connection details land in the `<name>-conn` Secret.
+   - `catalog/postgres-<tenant>-<name>.yaml`, a `Resource` entity of type `database`, owned by the tenant's team and `dependencyOf` the tenant entity. It shows next to the tenant in the catalog graph, and its Kubernetes tab lists the database's objects.
+
+Several databases per tenant are possible. On the shared Postgres server, each one is `<tenant>_<name>`.
+
+Verified with a scaffolder dry run on `tenant-payments`: it generates both files, and the claim passes `crossplane resource validate`. The entity's label selector was checked against kind through the backend's Kubernetes API, on the equivalent `checkout-db` entity.
+
+---
+
 ### Kubernetes: each tenant's resources
 
 Every tenant has a `Resource` entity of type `tenant` (for example `tenant-payments`), owned by its GitHub team. Its **Kubernetes** tab lists everything Crossplane composed for it:
 - the `Tenant` itself;
 - its `ResourceQuota`, `LimitRange`, `NetworkPolicy` and `RoleBinding`;
 - the OpenBao resources: `VaultNamespace`, `Mount`, `Policy`, auth `Backend`, `AuthBackendConfig` and `AuthBackendRole`.
+
+Database entities (type `database`) get the same tab, listing their `PostgresDatabase` and its `Role` and `Database`.
 
 How the pieces fit:
 
