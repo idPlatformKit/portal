@@ -9,7 +9,7 @@ metadata:
     # itself, carries this label.
     backstage.io/kubernetes-label-selector: crossplane.io/composite=${{ values.name }}
   links:
-    - url: https://github.com/idPlatformKit/instances/blob/main/tenants/${{ values.name }}.yaml
+    - url: ${{ values.instancesUrl }}/blob/main/tenants/${{ values.name }}.yaml
       title: Tenant claim
 spec:
   type: tenant
