@@ -7,7 +7,7 @@ metadata:
     Request an isolated namespace for your team (quota, limits, RBAC,
     default-deny network policy), optionally with its own OpenBao secrets
     namespace. Opens a pull request adding a Tenant claim to the
-    idPlatformKit/instances repository.
+    instances repository.
   tags:
     - crossplane
     - gitops
@@ -82,10 +82,13 @@ spec:
           ui:options:
             allowedHosts:
               - github.com
+            # The installation's org and instances repository, from the
+            # portal's config (idpk.github), see
+            # packages/backend/src/modules/idpkConfigPlaceholder.ts.
             allowedOwners:
-              - idPlatformKit
+              - $idpkConfig: github.org
             allowedRepos:
-              - instances
+              - $idpkConfig: github.instancesRepo
             requestUserCredentials:
               secretsKey: USER_OAUTH_TOKEN
               additionalScopes:
@@ -103,6 +106,7 @@ spec:
           ownerGroup: ${{ parameters.ownerGroup | parseEntityRef | pick('name') }}
           vaultEnabled: ${{ parameters.vaultEnabled }}
           serviceAccountName: ${{ parameters.serviceAccountName }}
+          instancesUrl: https://${{ parameters.repoUrl | parseRepoUrl | pick('host') }}/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: pr
       name: Open the pull request

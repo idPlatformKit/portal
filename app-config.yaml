@@ -14,6 +14,15 @@ app:
 organization:
   name: My Company
 
+# The installation: the GitHub org whose members sign in and whose teams own
+# tenants, and its instances repository. Read by the catalog providers below
+# and, through `$idpkConfig`, by the Software Templates. In the cluster the
+# Orchestrator sets both variables; for `yarn start`, export them.
+idpk:
+  github:
+    org: ${IDPK_GITHUB_ORG}
+    instancesRepo: ${IDPK_INSTANCES_REPO}
+
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
   # See https://backstage.io/docs/auth/service-to-service-auth for
@@ -89,7 +98,7 @@ catalog:
     githubOrg:
       id: development
       githubUrl: https://github.com
-      orgs: ['idPlatformKit']
+      orgs: ['${IDPK_GITHUB_ORG}']
       schedule:
         # The dev catalog is in-memory and starts empty: until this first
         # import runs, GitHub sign-in fails with "unable to resolve user
@@ -97,14 +106,14 @@ catalog:
         initialDelay: { seconds: 5 }
         frequency: { hours: 1 }
         timeout: { minutes: 50 }
-    # One Resource entity per tenant, added to idPlatformKit/instances by the
+    # One Resource entity per tenant, added to the instances repository by the
     # New Tenant template next to the claim (catalog/<tenant>.yaml).
     github:
       instances:
-        organization: idPlatformKit
+        organization: ${IDPK_GITHUB_ORG}
         catalogPath: '/catalog/*.yaml'
         filters:
-          repository: '^instances$'
+          repository: '^${IDPK_INSTANCES_REPO}$'
           branch: main
         schedule:
           initialDelay: { seconds: 5 }

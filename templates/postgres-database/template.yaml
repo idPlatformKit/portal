@@ -5,7 +5,7 @@ metadata:
   title: New Postgres database
   description: >-
     Add a logical Postgres database to one of your tenants. Opens a pull
-    request on the idPlatformKit/instances repository with a PostgresDatabase
+    request on the instances repository with a PostgresDatabase
     claim in the tenant's namespace, plus a catalog entity linked to the
     tenant.
   tags:
@@ -55,10 +55,13 @@ spec:
           ui:options:
             allowedHosts:
               - github.com
+            # The installation's org and instances repository, from the
+            # portal's config (idpk.github), see
+            # packages/backend/src/modules/idpkConfigPlaceholder.ts.
             allowedOwners:
-              - idPlatformKit
+              - $idpkConfig: github.org
             allowedRepos:
-              - instances
+              - $idpkConfig: github.instancesRepo
             requestUserCredentials:
               secretsKey: USER_OAUTH_TOKEN
               additionalScopes:
@@ -84,6 +87,7 @@ spec:
           tenant: ${{ steps.tenant.output.entity.metadata.title }}
           tenantRef: ${{ parameters.tenant }}
           owner: ${{ steps.tenant.output.entity.spec.owner }}
+          instancesUrl: https://${{ parameters.repoUrl | parseRepoUrl | pick('host') }}/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
 
     - id: pr
       name: Open the pull request

@@ -11,7 +11,7 @@ metadata:
     # and reports NOT_FOUND errors in the Kubernetes tab.
     backstage.io/kubernetes-label-selector: crossplane.io/composite=${{ values.name }},idplatformkit.io/tenant=${{ values.tenant }}
   links:
-    - url: https://github.com/idPlatformKit/instances/blob/main/databases/${{ values.tenant }}/${{ values.name }}.yaml
+    - url: ${{ values.instancesUrl }}/blob/main/databases/${{ values.tenant }}/${{ values.name }}.yaml
       title: PostgresDatabase claim
 spec:
   type: database
