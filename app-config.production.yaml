@@ -1,55 +1,69 @@
+# Configuration of the portal image, as deployed in the cluster by the
+# Orchestrator (platform/portal/). Loaded on top of app-config.yaml.
+# Everything installation-specific comes from environment variables, set by
+# the Orchestrator from the installer's configuration:
+#   PORTAL_BASE_URL            https://portal.127.0.0.1.nip.io on kind
+#   IDPK_GITHUB_ORG            the GitHub org whose users and teams sign in
+#   IDPK_INSTANCES_REPO        the name of that org's instances repository
+#   GITHUB_TOKEN               reads the org and opens nothing on its own
+#   AUTH_GITHUB_CLIENT_ID/_SECRET  the org's OAuth App, for sign-in
+# Not for production use as is: in-memory database, allow-all permissions.
+
 app:
-  # Should be the same as backend.baseUrl when using the `app-backend` plugin.
-  baseUrl: http://localhost:7007
+  title: IdPlatformKit portal
+  baseUrl: ${PORTAL_BASE_URL}
+
+organization:
+  name: ${IDPK_GITHUB_ORG}
 
 backend:
-  # Note that the baseUrl should be the URL that the browser and other clients
-  # should use when communicating with the backend, i.e. it needs to be
-  # reachable not just from within the backend host, but from all of your
-  # callers. When its value is "http://localhost:7007", it's strictly private
-  # and can't be reached by others.
-  baseUrl: http://localhost:7007
-  # The listener can also be expressed as a single <host>:<port> string. In this case we bind to
-  # all interfaces, the most permissive setting. The right value depends on your specific deployment.
+  baseUrl: ${PORTAL_BASE_URL}
   listen: ':7007'
-
-  # config options: https://node-postgres.com/apis/client
+  cors:
+    origin: ${PORTAL_BASE_URL}
+    methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+    credentials: true
+  # In-memory, like the dev setup: the catalog is rebuilt from GitHub on every
+  # start (the org import runs 5 seconds after startup).
   database:
-    client: pg
-    connection:
-      host: ${POSTGRES_HOST}
-      port: ${POSTGRES_PORT}
-      user: ${POSTGRES_USER}
-      password: ${POSTGRES_PASSWORD}
-      # https://node-postgres.com/features/ssl
-      # you can set the sslmode configuration option via the `PGSSLMODE` environment variable
-      # see https://www.postgresql.org/docs/current/libpq-ssl.html Table 33.1. SSL Mode Descriptions (e.g. require)
-      # ssl:
-      #   ca: # if you have a CA file and want to verify it you can uncomment this section
-      #     $file: <file-path>/ca/server.crt
+    client: better-sqlite3
+    connection: ':memory:'
 
 auth:
+  environment: production
   providers:
-    guest: {}
+    github:
+      production:
+        clientId: ${AUTH_GITHUB_CLIENT_ID}
+        clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+        signIn:
+          resolvers:
+            - resolver: usernameMatchingUserEntityName
 
 catalog:
-  # Overrides the default list locations from app-config.yaml as these contain example data.
-  # See https://backstage.io/docs/features/software-catalog/#adding-components-to-the-catalog for more details
-  # on how to get entities into the catalog.
+  # Replaces the example data of app-config.yaml: only the IdPlatformKit
+  # templates, plus what the providers import from GitHub.
   locations:
-    # Local example data, replace this with your production config, these are intended for demo use only.
-    # File locations are relative to the backend process, typically in a deployed context, such as in a Docker container, this will be the root
     - type: file
-      target: ./examples/entities.yaml
-
-    # Local example template
+      target: ./templates/tenant/template.yaml
+      rules:
+        - allow: [Template]
     - type: file
-      target: ./examples/template/template.yaml
+      target: ./templates/postgres-database/template.yaml
       rules:
         - allow: [Template]
 
-    # Local example organizational data
-    - type: file
-      target: ./examples/org.yaml
-      rules:
-        - allow: [User, Group]
+kubernetes:
+  # The cluster the portal runs in, read with the pod's own ServiceAccount
+  # (the read-only backstage-reader, see Orchestrator platform/portal/).
+  # There's no in-cluster locator type in this plugin version: a `config`
+  # cluster with the serviceAccount auth provider and no token falls back to
+  # the pod's mounted token.
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        - name: idplatformkit-local
+          url: https://kubernetes.default.svc
+          authProvider: serviceAccount
+          caFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          skipMetricsLookup: true
