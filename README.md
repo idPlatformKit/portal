@@ -6,10 +6,15 @@ The portal is part of the **idPlatformKit** project, which provides a production
 
 ---
 
-## Getting Started
+## Running it
+
+**In the cluster (the normal way).** The [Orchestrator](https://github.com/idPlatformKit/Orchestrator) installs the portal on its kind cluster, at `https://portal.127.0.0.1.nip.io`, from the image this repository publishes: `ghcr.io/idplatformkit/portal`. Its guided install (`make setup`, then `make up`) asks for your GitHub org, creates your instances repository and walks you through the OAuth App. Nothing to build here.
+
+**Locally, to work on the portal itself:**
 
 ```sh
 yarn install
+export IDPK_GITHUB_ORG=<your org> IDPK_INSTANCES_REPO=instances
 yarn start
 ```
 
@@ -17,7 +22,27 @@ The frontend runs on `http://localhost:3000` and the backend on `http://localhos
 
 Without options, `yarn start` loads `app-config.yaml` and then `app-config.local.yaml` on top of it. Keep secrets and personal overrides in `app-config.local.yaml` (git-ignored). Don't start with `--config app-config.local.yaml` alone: passing `--config` replaces the default files, so `app-config.yaml` is silently skipped. That's how removing a block from the local file once disabled the GitHub org import, because the committed copy in `app-config.yaml` was never loaded.
 
----
+### The image
+
+`.github/workflows/image.yaml` builds it for `linux/amd64` and `linux/arm64` on native runners, on every pull request, and publishes it on every push to `main` as `:main` and `:sha-<commit>`. To build it locally:
+
+```sh
+yarn install && yarn tsc && yarn build:backend
+docker build . -f packages/backend/Dockerfile -t idpk-portal:dev
+```
+
+It runs with `app-config.yaml` and `app-config.production.yaml`, configured entirely through environment variables (listed at the top of `app-config.production.yaml`). It contains the IdPlatformKit Software Templates, not Backstage's example data, and no `*.local.yaml` file (`.dockerignore`).
+
+### One installation, one org
+
+Nothing in the portal names a GitHub org. The installation's org and instances repository come from `IDPK_GITHUB_ORG` and `IDPK_INSTANCES_REPO`, through the `idpk.github` config. The catalog providers read them directly. The Software Templates are catalog entities, which don't get config substitution, so they use a placeholder this repository adds, `$idpkConfig` (`packages/backend/src/modules/idpkConfigPlaceholder.ts`):
+
+```yaml
+allowedOwners:
+  - $idpkConfig: github.org
+```
+
+**First attempt: `$text`.** Backstage's built-in `$text` placeholder reads a file next to the entity, so the plan was to mount the values as files. It only works for URL locations: for the templates, loaded from local files, the catalog logged `Placeholder $text could not form a URL out of /app/templates/...` and failed to process both templates.
 
 ## Configuration (`app-config.yaml`)
 
@@ -288,7 +313,10 @@ The backend loads `@backstage/plugin-permission-backend-module-allow-all-policy`
 |---|---|
 | `AUTH_GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
 | `AUTH_GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
-| `GITHUB_TOKEN` | GitHub PAT for API integrations (catalog, scaffolder) |
+| `GITHUB_TOKEN` | GitHub token for the integrations (org import, entity discovery). Needs `read:org`, `read:user` and `user:email` |
+| `IDPK_GITHUB_ORG` | The installation's GitHub org |
+| `IDPK_INSTANCES_REPO` | The name of its instances repository |
+| `PORTAL_BASE_URL` | Public URL of the portal, in the image (`https://portal.127.0.0.1.nip.io` on kind) |
 | `BACKEND_SECRET` | Shared secret for backend service-to-service auth (production) |
 
 ---
