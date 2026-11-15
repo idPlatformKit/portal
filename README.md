@@ -44,6 +44,12 @@ allowedOwners:
 
 **First attempt: `$text`.** Backstage's built-in `$text` placeholder reads a file next to the entity, so the plan was to mount the values as files. It only works for URL locations: for the templates, loaded from local files, the catalog logged `Placeholder $text could not form a URL out of /app/templates/...` and failed to process both templates.
 
+### Sign-in asks for `public_repo`
+
+The templates open pull requests with the signed-in user's token, which needs `public_repo`. The image requests it at sign-in (`additionalScopes` in `app-config.production.yaml`), so GitHub's consent screen lists it.
+
+**Why not later, only when a template runs.** That's what the templates' `requestUserCredentials` is meant to do, and it worked with the first OAuth App. With the OAuth App created for a new org, the pull request failed with `Not Found` on `POST /repos/<org>/instances/git/blobs`. GitHub's response showed the token only had `x-oauth-scopes: read:user`. The portal's logs showed why: asking for the extra scope only called `/api/auth/github/refresh`, which answered `200` instead of opening GitHub's consent popup. In this version of the GitHub provider, a refresh only checks the requested scopes when the session has no refresh token. When GitHub issues expiring tokens with a refresh token, the refresh gets a new token with the sign-in scopes, and the session records the requested ones as granted. Requesting `public_repo` at sign-in avoids the problem whatever the OAuth App's token settings. Verified on the new org: signed out and back in, the consent screen listed public repositories, and the pull request opened.
+
 ## Configuration (`app-config.yaml`)
 
 All runtime configuration lives in `app-config.yaml` at the project root. The sections below cover the key areas you will need to configure.

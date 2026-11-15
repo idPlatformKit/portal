@@ -36,6 +36,13 @@ auth:
       production:
         clientId: ${AUTH_GITHUB_CLIENT_ID}
         clientSecret: ${AUTH_GITHUB_CLIENT_SECRET}
+        # The Software Templates open pull requests with the user's own token,
+        # which needs public_repo. Requested at sign-in: when GitHub issues
+        # expiring tokens (with a refresh token), asking for it later only
+        # refreshes the sign-in token, which keeps read:user, and GitHub then
+        # refuses the write with a 404.
+        additionalScopes:
+          - public_repo
         signIn:
           resolvers:
             - resolver: usernameMatchingUserEntityName
