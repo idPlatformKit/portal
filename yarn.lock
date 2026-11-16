@@ -5362,6 +5362,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource-variable/jetbrains-mono@npm:5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource-variable/jetbrains-mono@npm:5.3.0"
+  checksum: 10c0/ba983321b530a56696b12390a377c79a962376a33359eeda37c9a2141450802e0b630e6c232d90aab0281179e623d01c77d1bc8059ce595fe865fbc6d6022ffb
+  languageName: node
+  linkType: hard
+
+"@fontsource-variable/schibsted-grotesk@npm:5.3.0":
+  version: 5.3.0
+  resolution: "@fontsource-variable/schibsted-grotesk@npm:5.3.0"
+  checksum: 10c0/beb5c2df4db502be877b25becba56e0538adef633c5c9fc6890913fe514116a858eeb0e3695228f92a9cfcff8ac08ede652d74b636d6ad2e73b9553088d8c069
+  languageName: node
+  linkType: hard
+
 "@formatjs/ecma402-abstract@npm:2.3.6":
   version: 2.3.6
   resolution: "@formatjs/ecma402-abstract@npm:2.3.6"
@@ -15131,7 +15145,10 @@ __metadata:
     "@backstage/plugin-techdocs": "npm:^1.17.2"
     "@backstage/plugin-techdocs-module-addons-contrib": "npm:^1.1.34"
     "@backstage/plugin-user-settings": "npm:^0.9.1"
+    "@backstage/theme": "npm:^0.7.2"
     "@backstage/ui": "npm:^0.13.1"
+    "@fontsource-variable/jetbrains-mono": "npm:5.3.0"
+    "@fontsource-variable/schibsted-grotesk": "npm:5.3.0"
     "@material-ui/core": "npm:^4.12.2"
     "@material-ui/icons": "npm:^4.9.1"
     "@playwright/test": "npm:^1.32.3"

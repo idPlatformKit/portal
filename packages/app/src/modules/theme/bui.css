@@ -1,0 +1,47 @@
+/*
+ * Backstage UI (BUI) components read CSS variables rather than the Material
+ * UI theme: give them the same identity. Values mirror tokens.ts.
+ */
+:root,
+[data-theme-mode='light'] {
+  --bui-font-regular: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui,
+    sans-serif;
+  --bui-font-monospace: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular,
+    monospace;
+  --bui-bg-app: #f7f8fa;
+  --bui-bg-solid: #1d63db;
+  --bui-bg-solid-hover: #164fb0;
+  --bui-bg-solid-pressed: #113f8c;
+  --bui-bg-solid-disabled: #8c96a6;
+  --bui-fg-primary: #1b2433;
+  --bui-fg-success: #137a4a;
+  --bui-fg-warning: #9a6412;
+  --bui-border-1: #d9dee6;
+  --bui-ring: #1d63db;
+}
+
+[data-theme-mode='dark'] {
+  --bui-font-regular: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui,
+    sans-serif;
+  --bui-font-monospace: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular,
+    monospace;
+  --bui-bg-app: #141a24;
+  --bui-bg-neutral-1: #1f2734;
+  --bui-bg-solid: #6aa1ff;
+  --bui-bg-solid-hover: #8fb8ff;
+  --bui-bg-solid-pressed: #c9dcff;
+  --bui-fg-solid: #141a24;
+  --bui-fg-primary: #f2f4f8;
+  --bui-fg-success: #42d085;
+  --bui-fg-warning: #e3a948;
+  --bui-border-1: #313a49;
+  --bui-ring: #6aa1ff;
+}
+
+/* Code and identifiers: the website's monospace. */
+code,
+pre,
+kbd {
+  font-family: 'JetBrains Mono Variable', ui-monospace, SFMono-Regular,
+    monospace;
+}
