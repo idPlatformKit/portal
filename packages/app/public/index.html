@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#1b2433" />
     <meta
       name="description"
-      content="Backstage is an open source framework for building developer portals"
+      content="IdPlatformKit developer portal: tenants, databases and their status, from your GitHub org"
     />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -17,8 +17,8 @@
       href="<%= publicPath %>/manifest.json"
       crossorigin="use-credentials"
     />
-    <link rel="icon" href="<%= publicPath %>/favicon.ico" />
-    <link rel="shortcut icon" href="<%= publicPath %>/favicon.ico" />
+    <link rel="icon" href="<%= publicPath %>/favicon.ico" sizes="32x32" />
+    <link rel="icon" type="image/svg+xml" href="<%= publicPath %>/favicon.svg" />
     <link
       rel="apple-touch-icon"
       sizes="180x180"
@@ -36,12 +36,7 @@
       sizes="16x16"
       href="<%= publicPath %>/favicon-16x16.png"
     />
-    <link
-      rel="mask-icon"
-      href="<%= publicPath %>/safari-pinned-tab.svg"
-      color="#5bbad5"
-    />
-    <title><%= config.getOptionalString('app.title') ?? 'Backstage' %></title>
+    <title><%= config.getOptionalString('app.title') ?? 'IdPlatformKit portal' %></title>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

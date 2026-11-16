@@ -1,5 +1,5 @@
 app:
-  title: Scaffolded Backstage App
+  title: IdPlatformKit portal
   baseUrl: http://localhost:3000
 
   # Enable all packages by default, this will discover packages from packages/app/package.json
@@ -12,7 +12,7 @@ app:
           path: /
 
 organization:
-  name: My Company
+  name: ${IDPK_GITHUB_ORG}
 
 # The installation: the GitHub org whose members sign in and whose teams own
 # tenants, and its instances repository. Read by the catalog providers below
