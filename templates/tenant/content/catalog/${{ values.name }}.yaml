@@ -3,7 +3,7 @@ kind: Resource
 metadata:
   name: tenant-${{ values.name }}
   title: ${{ values.name }}
-  description: Tenant namespace provisioned by Crossplane from tenants/${{ values.name }}.yaml
+  description: Tenant namespaces (${{ values.name }}-${{ values.environments | join(', ' + values.name + '-') }}) provisioned by Crossplane from tenants/${{ values.name }}.yaml
   annotations:
     # Every object Crossplane composes for this Tenant, and the Tenant
     # itself, carries this label.

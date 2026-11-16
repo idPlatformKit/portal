@@ -2,11 +2,12 @@ apiVersion: database.idplatformkit.io/v1alpha1
 kind: PostgresDatabase
 metadata:
   name: ${{ values.name }}
-  namespace: ${{ values.tenant }}
+  namespace: ${{ values.namespace }}
   labels:
     # Lets the portal find this database among same-named ones in other
-    # tenants. The composition sets the same label on what it composes.
-    idplatformkit.io/tenant: ${{ values.tenant }}
+    # namespaces (the value is the namespace). The composition sets the
+    # same label on what it composes.
+    idplatformkit.io/tenant: ${{ values.namespace }}
 spec:
   writeConnectionSecretToRef:
     name: ${{ values.name }}-conn

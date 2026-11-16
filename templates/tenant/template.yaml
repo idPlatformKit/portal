@@ -4,10 +4,10 @@ metadata:
   name: new-tenant
   title: New Tenant
   description: >-
-    Request an isolated namespace for your team (quota, limits, RBAC,
-    default-deny network policy), optionally with its own OpenBao secrets
-    namespace. Opens a pull request adding a Tenant claim to the
-    instances repository.
+    Request a tenant for your team: one isolated namespace per environment
+    (staging and prod, with quota, limits, RBAC and a network policy),
+    optionally with its own OpenBao secrets namespace. Opens a pull request
+    adding a Tenant claim to the instances repository.
   tags:
     - crossplane
     - gitops
@@ -26,25 +26,44 @@ spec:
           title: Name
           type: string
           description: >-
-            Becomes the namespace name: lowercase letters, digits and
-            dashes, starting and ending with a letter or digit.
+            The namespaces are <name>-staging and <name>-prod: lowercase
+            letters, digits and dashes, starting and ending with a letter
+            or digit.
           pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
-          maxLength: 63
+          maxLength: 55
           ui:autofocus: true
         ownerGroup:
           title: Owner group
           type: string
-          description: GitHub team granted `edit` on the tenant's namespace.
+          description: >-
+            GitHub team that owns the tenant: `edit` in staging, read-only in
+            prod (deployments there go through pull requests).
           ui:field: OwnerPicker
           ui:options:
             catalogFilter:
               - kind: Group
                 metadata.annotations.github.com/team-slug:
                   exists: true
+        environments:
+          title: Environments
+          type: array
+          description: >-
+            Each one is a namespace with its own rules: staging is where the
+            team works, prod is stricter (images by digest, at least 2
+            replicas, Pod Security restricted).
+          items:
+            type: string
+            enum: [staging, prod]
+          uniqueItems: true
+          minItems: 1
+          default: [staging, prod]
+          ui:widget: checkboxes
         vaultEnabled:
           title: OpenBao secrets namespace
           type: boolean
-          description: Give the tenant its own isolated OpenBao namespace and KV mount.
+          description: >-
+            Give the tenant its own isolated OpenBao namespace, with one KV
+            mount per environment.
           default: false
       dependencies:
         vaultEnabled:
@@ -61,11 +80,11 @@ spec:
                   title: ServiceAccount
                   type: string
                   description: >-
-                    The only ServiceAccount (in the tenant's namespace) allowed
-                    to read the tenant's secrets. Created with the tenant; run
-                    the workloads that need the secrets as it. The tenant's
-                    "openbao" SecretStore uses it to deliver them as
-                    Kubernetes Secrets.
+                    Created in each environment's namespace, and the only
+                    ServiceAccount allowed to read that environment's
+                    secrets. Run the workloads that need them as it. Each
+                    environment's "openbao" SecretStore uses it to deliver
+                    them as Kubernetes Secrets.
                   pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
 
     - title: Pull request
@@ -104,6 +123,7 @@ spec:
         values:
           name: ${{ parameters.name }}
           ownerGroup: ${{ parameters.ownerGroup | parseEntityRef | pick('name') }}
+          environments: ${{ parameters.environments }}
           vaultEnabled: ${{ parameters.vaultEnabled }}
           serviceAccountName: ${{ parameters.serviceAccountName }}
           instancesUrl: https://${{ parameters.repoUrl | parseRepoUrl | pick('host') }}/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -118,7 +138,7 @@ spec:
         description: |
           Adds the `${{ parameters.name }}` Tenant, owned by `${{ parameters.ownerGroup | parseEntityRef | pick('name') }}`.
 
-          Opened from the IdPlatformKit portal ("New Tenant" template). CI validates the claim against the Orchestrator XRDs; once merged, Argo CD syncs it and Crossplane provisions the namespace.
+          Opened from the IdPlatformKit portal ("New Tenant" template). CI validates the claim against the Orchestrator XRDs; once merged, Argo CD syncs it and Crossplane provisions its namespaces: ${{ parameters.name }}-${{ parameters.environments | join(', ' + parameters.name + '-') }}.
         token: ${{ secrets.USER_OAUTH_TOKEN }}
 
   output:

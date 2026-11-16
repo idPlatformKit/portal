@@ -4,10 +4,10 @@ metadata:
   name: new-postgres-database
   title: New Postgres database
   description: >-
-    Add a logical Postgres database to one of your tenants. Opens a pull
-    request on the instances repository with a PostgresDatabase
-    claim in the tenant's namespace, plus a catalog entity linked to the
-    tenant.
+    Add a logical Postgres database to one of your tenants, in one of its
+    environments. Opens a pull request on the instances repository with a
+    PostgresDatabase claim in the environment's namespace, plus a catalog
+    entity linked to the tenant.
   tags:
     - crossplane
     - gitops
@@ -20,6 +20,7 @@ spec:
     - title: Database
       required:
         - tenant
+        - environment
         - name
       properties:
         tenant:
@@ -31,13 +32,22 @@ spec:
             catalogFilter:
               - kind: Resource
                 spec.type: tenant
+        environment:
+          title: Environment
+          type: string
+          description: >-
+            The database lives in the namespace <tenant>-<environment>, which
+            the tenant must have.
+          enum: [staging, prod]
+          default: staging
         name:
           title: Name
           type: string
           description: >-
             Lowercase letters, digits and dashes. On the shared Postgres
-            server the database and its role are named <tenant>_<name>, which
-            must stay under 63 characters.
+            server the database and its role are named
+            <tenant>-<environment>_<name>, which must stay under 63
+            characters.
           pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?$'
           maxLength: 30
           ui:autofocus: true
@@ -69,7 +79,7 @@ spec:
                   - public_repo
 
   steps:
-    # The tenant entity carries the namespace name (metadata.title) and the
+    # The tenant entity carries the tenant's name (metadata.title) and the
     # owning team, both reused for the new database.
     - id: tenant
       name: Look up the tenant
@@ -84,7 +94,7 @@ spec:
         url: ./content
         values:
           name: ${{ parameters.name }}
-          tenant: ${{ steps.tenant.output.entity.metadata.title }}
+          namespace: ${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.environment }}
           tenantRef: ${{ parameters.tenant }}
           owner: ${{ steps.tenant.output.entity.spec.owner }}
           instancesUrl: https://${{ parameters.repoUrl | parseRepoUrl | pick('host') }}/${{ parameters.repoUrl | parseRepoUrl | pick('owner') }}/${{ parameters.repoUrl | parseRepoUrl | pick('repo') }}
@@ -94,10 +104,10 @@ spec:
       action: publish:github:pull-request
       input:
         repoUrl: ${{ parameters.repoUrl }}
-        branchName: postgres/${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.name }}
-        title: 'feat: add Postgres database ${{ parameters.name }} to tenant ${{ steps.tenant.output.entity.metadata.title }}'
+        branchName: postgres/${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.environment }}-${{ parameters.name }}
+        title: 'feat: add Postgres database ${{ parameters.name }} to ${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.environment }}'
         description: |
-          Adds the `${{ parameters.name }}` Postgres database to the `${{ steps.tenant.output.entity.metadata.title }}` tenant. Its connection details will be in the `${{ parameters.name }}-conn` Secret of the tenant's namespace.
+          Adds the `${{ parameters.name }}` Postgres database to the `${{ steps.tenant.output.entity.metadata.title }}` tenant, in its `${{ parameters.environment }}` environment. Its connection details will be in the `${{ parameters.name }}-conn` Secret of the `${{ steps.tenant.output.entity.metadata.title }}-${{ parameters.environment }}` namespace.
 
           Opened from the IdPlatformKit portal ("New Postgres database" template). CI validates the claim against the Orchestrator XRDs. Once merged, Argo CD syncs it and Crossplane provisions the database.
         token: ${{ secrets.USER_OAUTH_TOKEN }}
