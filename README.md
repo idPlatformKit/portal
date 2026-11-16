@@ -300,6 +300,26 @@ For production, switch to an external builder and a cloud storage publisher (GCS
 
 ---
 
+### Admin page (`/admin`, platform admins only)
+
+Members of the installation org's `platform-admins` team get an **Admin** entry in the sidebar, with:
+
+- the installation: its GitHub org, its instances repository, the portal's image;
+- the tools behind the platform and how to sign in to each (Argo CD, OpenBao, Dex, kubectl), from `idpk.admin.tools`;
+- every Argo CD Application with its health, sync status, chart or path, revision and last sync.
+
+The backend plugin `idpk-admin` (`packages/backend/src/plugins/admin/`) checks on every request that the signed-in user's ownership includes `idpk.admin.group` (`group:default/platform-admins`, the team as imported from GitHub), and answers `403` otherwise; the sidebar asks it (`/access`) whether to show the entry. It reads the Applications with the same identity as the Kubernetes plugin, the read-only `backstage-reader` ServiceAccount: the pod's token in the cluster, `kubernetes.clusterLocatorMethods[0]`'s token with `yarn start`.
+
+The page itself is `packages/app/src/modules/admin/`. `PORTAL_IMAGE` (set by the Orchestrator's chart) fills in the image; with `yarn start` it shows `development`.
+
+---
+
+### Theme
+
+`packages/app/src/modules/theme/` replaces Backstage's light and dark themes with IdPlatformKit's (the same values as the website, in `tokens.ts`), and `bui.css` gives Backstage UI components the same colours and fonts. The fonts are bundled.
+
+---
+
 ### Permissions
 
 The permission framework is enabled by default:
