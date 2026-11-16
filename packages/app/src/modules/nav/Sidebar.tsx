@@ -13,16 +13,21 @@ import SearchIcon from '@material-ui/icons/Search';
 import { SidebarSearchModal } from '@backstage/plugin-search';
 import { UserSettingsSignInAvatar } from '@backstage/plugin-user-settings';
 import { NotificationsSidebarItem } from '@backstage/plugin-notifications';
+import { useAdminAccess } from '../admin/useAdminAccess';
 
 export const SidebarContent = NavContentBlueprint.make({
   params: {
-    component: ({ navItems }) => {
+    component: function SidebarContent({ navItems }) {
+      // The admin page's entry, only for platform-admins (the backend refuses
+      // everyone else anyway).
+      const isAdmin = useAdminAccess();
       const nav = navItems.withComponent(item => (
         <SidebarItem icon={() => item.icon} to={item.href} text={item.title} />
       ));
 
       // Skipped items
       nav.take('page:search'); // Using search modal instead
+      const admin = nav.take('page:app/admin');
 
       return (
         <Sidebar>
@@ -40,6 +45,12 @@ export const SidebarContent = NavContentBlueprint.make({
             </SidebarScrollWrapper>
           </SidebarGroup>
           <SidebarSpace />
+          {isAdmin && (
+            <>
+              <SidebarDivider />
+              {admin}
+            </>
+          )}
           <SidebarDivider />
           <NotificationsSidebarItem />
           <SidebarDivider />

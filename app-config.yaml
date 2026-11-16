@@ -22,6 +22,23 @@ idpk:
   github:
     org: ${IDPK_GITHUB_ORG}
     instancesRepo: ${IDPK_INSTANCES_REPO}
+  # The platform admins' page (/admin): only for members of this group, the
+  # installation org's platform-admins team as imported from GitHub.
+  admin:
+    group: group:default/platform-admins
+    argocdNamespace: argocd
+    tools:
+      - title: Argo CD
+        url: https://argocd.127.0.0.1.nip.io
+        signIn: Log in via GitHub. Admin for platform-admins, read-only for everyone else.
+      - title: OpenBao
+        url: https://openbao.127.0.0.1.nip.io/ui
+        signIn: Method OIDC, role admin (the default). Role tenant-<name> to act as a team.
+      - title: Dex
+        url: https://dex.127.0.0.1.nip.io/.well-known/openid-configuration
+        signIn: The OIDC issuer behind Argo CD, OpenBao and kubectl. No UI of its own.
+      - title: kubectl
+        signIn: make kubeconfig-sso in the Orchestrator, then kubectl --context idpk-sso. cluster-admin for platform-admins.
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins

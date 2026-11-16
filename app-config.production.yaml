@@ -16,6 +16,11 @@ app:
 organization:
   name: ${IDPK_GITHUB_ORG}
 
+# Shown on the admin page. Set by the Orchestrator's chart.
+idpk:
+  portal:
+    image: ${PORTAL_IMAGE}
+
 backend:
   baseUrl: ${PORTAL_BASE_URL}
   listen: ':7007'

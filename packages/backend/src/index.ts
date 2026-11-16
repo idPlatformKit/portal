@@ -25,7 +25,7 @@ backend.add(import('@backstage/plugin-techdocs-backend'));
 
 // auth plugin
 backend.add(import('@backstage/plugin-auth-backend'));
-backend.add(import('@backstage/plugin-auth-backend-module-github-provider'))
+backend.add(import('@backstage/plugin-auth-backend-module-github-provider'));
 // See https://backstage.io/docs/backend-system/building-backends/migrating#the-auth-plugin
 backend.add(import('@backstage/plugin-auth-backend-module-guest-provider'));
 // See https://backstage.io/docs/auth/guest/provider
@@ -35,7 +35,7 @@ backend.add(import('@backstage/plugin-catalog-backend'));
 backend.add(
   import('@backstage/plugin-catalog-backend-module-scaffolder-entity-model'),
 );
-backend.add(import('@backstage/plugin-catalog-backend-module-github-org'))
+backend.add(import('@backstage/plugin-catalog-backend-module-github-org'));
 // Discovers the tenant and database entities in the instances repository
 // (catalog/*.yaml)
 backend.add(import('@backstage/plugin-catalog-backend-module-github'));
@@ -69,5 +69,9 @@ backend.add(import('@backstage/plugin-kubernetes-backend'));
 // notifications and signals plugins
 backend.add(import('@backstage/plugin-notifications-backend'));
 backend.add(import('@backstage/plugin-signals-backend'));
+
+// The platform admins' page: tools, Argo CD status, installation details
+// (plugins/admin).
+backend.add(import('./plugins/admin'));
 
 backend.start();
