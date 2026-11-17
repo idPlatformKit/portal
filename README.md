@@ -202,13 +202,14 @@ A user declared both in `examples/org.yaml` and in the GitHub org is reported as
 
 #### New Tenant (`templates/tenant/`)
 
-Self-service entry point to the [IdPlatformKit Orchestrator](https://github.com/idPlatformKit/Orchestrator): a developer fills in a form, and the template opens a pull request adding a `Tenant` claim to [idPlatformKit/instances](https://github.com/idPlatformKit/instances). From there the platform's GitOps flow takes over: CI validates the claim against the XRDs, and once merged, Argo CD syncs it and Crossplane provisions the namespace.
+Self-service entry point to the [IdPlatformKit Orchestrator](https://github.com/idPlatformKit/Orchestrator): a developer fills in a form, and the template opens a pull request adding a `Tenant` claim to [idPlatformKit/instances](https://github.com/idPlatformKit/instances). From there the platform's GitOps flow takes over: CI validates the claim against the XRDs, and once merged, Argo CD syncs it and Crossplane provisions one namespace per environment.
 
 | Field | Becomes |
 |---|---|
-| Name | `metadata.name`, which is also the namespace name |
-| Owner group | `spec.ownerGroup`. Picked among the `Group` entities imported from GitHub teams (filtered on the `github.com/team-slug` annotation) |
-| OpenBao secrets namespace + ServiceAccount | `spec.vault`, only when enabled |
+| Name | `metadata.name`. The namespaces are `<name>-staging` and `<name>-prod` |
+| Owner group | `spec.ownerGroup`: `edit` in staging, read-only in prod. Picked among the `Group` entities imported from GitHub teams (filtered on the `github.com/team-slug` annotation) |
+| Environments | `spec.environments`: staging, prod or both (the default). See the Orchestrator's [environments](https://github.com/idPlatformKit/Orchestrator/blob/main/docs/environments.md) |
+| OpenBao secrets namespace + ServiceAccount | `spec.vault`, only when enabled: one KV mount per environment |
 
 The pull request is opened **with the developer's own GitHub identity**, not a shared portal token: the `RepoUrlPicker` requests the user's GitHub OAuth token with the extra `public_repo` scope (`requestUserCredentials`), and `publish:github:pull-request` uses it. GitHub then shows who asked for the tenant.
 
@@ -237,14 +238,14 @@ The template is registered in `catalog.locations` in `app-config.yaml`. If your 
 
 The model for adding a service to an existing tenant:
 
-1. **Pick the tenant.** `OwnedEntityPicker` limits the list to `Resource` entities of type `tenant` owned by your teams.
+1. **Pick the tenant and the environment.** `OwnedEntityPicker` limits the list to `Resource` entities of type `tenant` owned by your teams. The environment is staging or prod: the database lives in the namespace `<tenant>-<environment>`, which the tenant must have.
 2. **Describe the service.** Here, a database name.
-3. **Look it up.** `catalog:fetch` reads the tenant entity, to reuse its namespace (`metadata.title`) and its owner.
+3. **Look it up.** `catalog:fetch` reads the tenant entity, to reuse its name (`metadata.title`) and its owner.
 4. **Open the pull request.** It goes to [idPlatformKit/instances](https://github.com/idPlatformKit/instances) with your own GitHub identity, and adds two files:
-   - `databases/<tenant>/<name>.yaml`, a `PostgresDatabase` claim in the tenant's namespace. The connection details land in the `<name>-conn` Secret.
-   - `catalog/postgres-<tenant>-<name>.yaml`, a `Resource` entity of type `database`, owned by the tenant's team and `dependencyOf` the tenant entity. It shows next to the tenant in the catalog graph, and its Kubernetes tab lists the database's objects.
+   - `databases/<tenant>-<environment>/<name>.yaml`, a `PostgresDatabase` claim in the environment's namespace. The connection details land in the `<name>-conn` Secret.
+   - `catalog/postgres-<tenant>-<environment>-<name>.yaml`, a `Resource` entity of type `database`, owned by the tenant's team and `dependencyOf` the tenant entity. It shows next to the tenant in the catalog graph, and its Kubernetes tab lists the database's objects.
 
-Several databases per tenant are possible. On the shared Postgres server, each one is `<tenant>_<name>`.
+Several databases per tenant and environment are possible. On the shared Postgres server, each one is `<tenant>-<environment>_<name>`.
 
 Verified end to end on kind:
 
@@ -254,6 +255,8 @@ Verified end to end on kind:
 
 Before that, a scaffolder dry run checked the generated files, and the claim passes `crossplane resource validate`.
 
+The runs above predate environments (Orchestrator #63): back then a tenant had a single namespace, `payments`. The environment fields were checked by rendering both templates' files with Nunjucks; a run from the browser is still to be done.
+
 ---
 
 ### Kubernetes: each tenant's resources
@@ -261,7 +264,9 @@ Before that, a scaffolder dry run checked the generated files, and the claim pas
 Every tenant has a `Resource` entity of type `tenant` (for example `tenant-payments`), owned by its GitHub team. Its **Kubernetes** tab lists everything Crossplane composed for it:
 - the `Tenant` itself;
 - its `ResourceQuota`, `LimitRange`, `NetworkPolicy` and `RoleBinding`;
-- the OpenBao resources: `VaultNamespace`, `Mount`, `Policy`, auth `Backend`, `AuthBackendConfig` and `AuthBackendRole`.
+- the OpenBao resources: `VaultNamespace`, `Mount`, `Policy`, auth `Backend`, `AuthBackendConfig` and `AuthBackendRole`, kept in the platform's `idpk-tenants` namespace.
+
+They span the tenant's namespaces (`<tenant>-staging`, `<tenant>-prod`), since they're selected by label.
 
 Database entities (type `database`) get the same tab, listing their `PostgresDatabase` and its `Role` and `Database`.
 
