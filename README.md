@@ -255,7 +255,12 @@ Verified end to end on kind:
 
 Before that, a scaffolder dry run checked the generated files, and the claim passes `crossplane resource validate`.
 
-The runs above predate environments (Orchestrator #63): back then a tenant had a single namespace, `payments`. The environment fields were checked by rendering both templates' files with Nunjucks; a run from the browser is still to be done.
+The runs above predate environments (Orchestrator #63): back then a tenant had a single namespace, `payments`. With environments, both templates were run again from the browser on the test installation (org `idpk-test`, portal image `sha-b2bfdca`):
+
+1. New Tenant opened [idpk-test/instances#4](https://github.com/idpk-test/instances/pull/4): `payments`, owned by `team-a`, `environments: [staging, prod]`, OpenBao enabled. After the merge, Crossplane created `payments-staging` (Pod Security `baseline`) and `payments-prod` (`restricted`).
+2. New Postgres database opened [idpk-test/instances#5](https://github.com/idpk-test/instances/pull/5): `db-payments` in `staging`, as `databases/payments-staging/db-payments.yaml` with `catalog/postgres-payments-staging-db-payments.yaml`. The database became `Ready`, with its `db-payments-conn` Secret in `payments-staging`.
+
+The instances CI validated both pull requests. The `payments` Tenant itself stayed not `Ready` until its prod OpenBao mount was fixed by hand: provider-vault had created it, then tried to create it again (Orchestrator #16, unrelated to the templates).
 
 ---
 
